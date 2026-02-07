@@ -76,7 +76,7 @@ mysql -u root -p < data-agent-management/src/main/resources/sql/schema.sql
 
 # 2. 启动后端
 cd data-agent-management
-./mvnw spring-boot:run
+../mvnw spring-boot:run
 
 # 3. 启动前端
 cd data-agent-frontend

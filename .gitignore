@@ -57,5 +57,6 @@ modified_mcp_config.json
 .idea/LocalCodeIndex/
 
 uploads/*
-vectorstore/*
+# 忽略所有层级的 vectorstore 目录（SimpleVectorStore 持久化文件）
+**/vectorstore/
 .java-version
