@@ -1,0 +1,43 @@
+# Git
+.git
+.gitignore
+.github
+
+# Build outputs (avoid invalidating cache)
+**/target
+**/node_modules
+**/dist
+**/.vuepress/dist
+
+# IDE & OS
+.idea
+.vscode
+*.iml
+.DS_Store
+*.swp
+*.swo
+
+# Docs & misc (not needed in image)
+docs
+*.md
+!data-agent-management/README.md
+img
+# CI 需保留：Maven checkstyle 依赖 CI/src/checkstyle/checkstyle.xml
+
+# Test & coverage
+**/__tests__
+**/*.test.*
+**/*.spec.*
+**/coverage
+**/.nyc_output
+**/test-results
+
+# Logs & temp
+*.log
+*.tmp
+.cache
+
+# Docker (avoid recursive copy)
+docker-file
+Dockerfile*
+.dockerignore

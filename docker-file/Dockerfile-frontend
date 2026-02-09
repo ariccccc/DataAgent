@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 #Copyright 2024-2026 the original author or authors.
 #
 #Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,29 +13,23 @@
 #See the License for the specific language governing permissions and
 #limitations under the License.
 
-# 构建阶段
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# 复制源代码
+# 先只复制依赖清单，利用层缓存：依赖未变时跳过 npm install
+COPY data-agent-frontend/package.json data-agent-frontend/package-lock.json* ./
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
+
+# 再复制源码并构建（代码变更时只重跑这一层及之后）
 COPY data-agent-frontend .
-
-# 安装依赖
-RUN npm install
-
-# 构建生产版本
 RUN npm run build
 
-
-# 运行阶段
 FROM nginx:alpine
 
-# 复制构建结果到nginx目录
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# 暴露端口
 EXPOSE 3000
 
-# 启动nginx
 CMD ["nginx", "-g", "daemon off;"]

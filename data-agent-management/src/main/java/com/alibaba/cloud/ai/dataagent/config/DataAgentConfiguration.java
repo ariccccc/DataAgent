@@ -66,6 +66,8 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
+import reactor.netty.tcp.DefaultSslContextSpec;
+import reactor.netty.tcp.SslProvider;
 
 import java.time.Duration;
 import java.util.*;
@@ -107,11 +109,17 @@ public class DataAgentConfiguration implements DisposableBean {
 
 	@Bean
 	@ConditionalOnMissingBean(WebClient.Builder.class)
-	public WebClient.Builder webClientBuilder(@Value("${webclient.response.timeout:600}") long responseTimeout) {
+	public WebClient.Builder webClientBuilder(@Value("${webclient.response.timeout:600}") long responseTimeout,
+			@Value("${webclient.ssl.handshake-timeout-seconds:60}") long sslHandshakeTimeoutSeconds) {
 
-		return WebClient.builder()
-			.clientConnector(new ReactorClientHttpConnector(
-					HttpClient.create().responseTimeout(Duration.ofSeconds(responseTimeout))));
+		HttpClient httpClient = HttpClient.create()
+			.responseTimeout(Duration.ofSeconds(responseTimeout))
+			.secure(spec -> {
+				SslProvider.Builder builder = spec.sslContext(DefaultSslContextSpec.forClient());
+				builder.handshakeTimeout(Duration.ofSeconds(sslHandshakeTimeoutSeconds));
+			});
+
+		return WebClient.builder().clientConnector(new ReactorClientHttpConnector(httpClient));
 	}
 
 	@Bean

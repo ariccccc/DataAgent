@@ -1,5 +1,5 @@
 -- 插入用户数据
-INSERT INTO users (username, email) VALUES
+INSERT IGNORE INTO users (username, email) VALUES
 ('alice', 'alice@example.com'),
 ('bob', 'bob@example.com'),
 ('cathy', 'cathy@example.com'),
@@ -8,7 +8,7 @@ INSERT INTO users (username, email) VALUES
 ON DUPLICATE KEY UPDATE username=VALUES(username);
 
 -- 插入商品分类数据
-INSERT INTO categories (name) VALUES
+INSERT IGNORE INTO categories (name) VALUES
 ('电子产品'),
 ('服装'),
 ('图书'),
@@ -16,7 +16,7 @@ INSERT INTO categories (name) VALUES
 ('食品');
 
 -- 插入商品数据
-INSERT INTO products (name, price, stock) VALUES
+INSERT IGNORE INTO products (name, price, stock) VALUES
 ('智能手机', 2999.00, 100),
 ('T恤衫', 89.00, 500),
 ('小说', 39.00, 200),
@@ -29,7 +29,7 @@ INSERT INTO products (name, price, stock) VALUES
 ('历史书', 69.00, 150);
 
 -- 插入商品-分类关联数据
-INSERT INTO product_categories (product_id, category_id) VALUES
+INSERT IGNORE INTO product_categories (product_id, category_id) VALUES
 (1, 1), -- 智能手机-电子产品
 (2, 2), -- T恤衫-服装
 (3, 3), -- 小说-图书
@@ -42,7 +42,7 @@ INSERT INTO product_categories (product_id, category_id) VALUES
 (10, 3); -- 历史书-图书
 
 -- 插入订单数据
-INSERT INTO orders (user_id, total_amount, status, order_date) VALUES
+INSERT IGNORE INTO orders (user_id, total_amount, status, order_date) VALUES
 (1, 3088.00, 'completed', '2025-06-01 10:10:00'),
 (2, 39.00, 'pending', '2025-06-02 09:23:00'),
 (3, 1204.00, 'completed', '2025-06-03 13:45:00'),
@@ -55,7 +55,7 @@ INSERT INTO orders (user_id, total_amount, status, order_date) VALUES
 (5, 129.00, 'pending', '2025-06-07 18:00:00');
 
 -- 插入订单明细数据
-INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES
+INSERT IGNORE INTO order_items (order_id, product_id, quantity, unit_price) VALUES
 (1, 1, 1, 2999.00),
 (1, 2, 1, 89.00),
 (2, 3, 1, 39.00),

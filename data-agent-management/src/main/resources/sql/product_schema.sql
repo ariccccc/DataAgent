@@ -1,5 +1,5 @@
 -- 用户表
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
                        id INT PRIMARY KEY AUTO_INCREMENT COMMENT '用户ID，主键自增',
                        username VARCHAR(50) NOT NULL COMMENT '用户名',
                        email VARCHAR(100) NOT NULL COMMENT '用户邮箱',
@@ -7,7 +7,7 @@ CREATE TABLE users (
 ) COMMENT='用户表';
 
 -- 商品表
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
                           id INT PRIMARY KEY AUTO_INCREMENT COMMENT '商品ID，主键自增',
                           name VARCHAR(100) NOT NULL COMMENT '商品名称',
                           price DECIMAL(10,2) NOT NULL COMMENT '商品单价',
@@ -16,7 +16,7 @@ CREATE TABLE products (
 ) COMMENT='商品表';
 
 -- 订单表
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
                         id INT PRIMARY KEY AUTO_INCREMENT COMMENT '订单ID，主键自增',
                         user_id INT NOT NULL COMMENT '下单用户ID',
                         order_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '下单时间',
@@ -26,7 +26,7 @@ CREATE TABLE orders (
 ) COMMENT='订单表';
 
 -- 订单明细表
-CREATE TABLE order_items (
+CREATE TABLE IF NOT EXISTS order_items (
                              id INT PRIMARY KEY AUTO_INCREMENT COMMENT '订单明细ID，主键自增',
                              order_id INT NOT NULL COMMENT '订单ID',
                              product_id INT NOT NULL COMMENT '商品ID',
@@ -37,13 +37,13 @@ CREATE TABLE order_items (
 ) COMMENT='订单明细表';
 
 -- 商品分类表
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
                             id INT PRIMARY KEY AUTO_INCREMENT COMMENT '分类ID，主键自增',
                             name VARCHAR(50) NOT NULL COMMENT '分类名称'
 ) COMMENT='商品分类表';
 
 -- 商品-分类关联表（多对多）
-CREATE TABLE product_categories (
+CREATE TABLE IF NOT EXISTS product_categories (
                                     product_id INT NOT NULL COMMENT '商品ID',
                                     category_id INT NOT NULL COMMENT '分类ID',
                                     PRIMARY KEY (product_id, category_id),

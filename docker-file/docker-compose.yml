@@ -11,17 +11,21 @@
 #WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #See the License for the specific language governing permissions and
 #limitations under the License.
+#
+# 构建加速：请使用 BuildKit 以启用 Maven/npm 缓存（首次构建后依赖层会被缓存）
+#   export DOCKER_BUILDKIT=1
+#   docker compose -f docker-file/docker-compose.yml build
 
 services:
-  # MySQL数据库
+  # MySQL数据库（业务库，挂载 volume 后 down/up 不会丢数据）
   mysql:
     image: mysql:8.0
     container_name: data-agent-mysql-inner
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: nl2sql_db
-#    volumes:
-#      - nl2sql-mysql-inner-data:/var/lib/mysql
+    volumes:
+      - data-agent-mysql-inner-data:/var/lib/mysql
     networks:
       - app-network
     restart: unless-stopped
@@ -43,17 +47,19 @@ services:
       - DATA_AGENT_DATASOURCE_URL=jdbc:mysql://mysql:3306/nl2sql_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       - DATA_AGENT_DATASOURCE_USERNAME=root
       - DATA_AGENT_DATASOURCE_PASSWORD=root
+      # always：启动时执行 schema.sql/data.sql 建表及示例数据（schema 用 IF NOT EXISTS，data 用 INSERT IGNORE，可重复执行）
       - DATA_AGENT_DATASOURCE_SQL_INIT=always
-      - AI_DASHSCOPE_API_KEY=${AI_DASHSCOPE_API_KEY}
+      - AI_DASHSCOPE_API_KEY=sk-457106eabde94d1db30aa805d18a315a
     ports:
       - "8065:8065"
     depends_on:
       mysql:
         condition: service_healthy
+      # 模拟数据源仅需容器已启动即可，init 脚本在后台跑完会自行变 healthy，避免 compose up 等太久
       mysql-data:
-        condition: service_healthy
+        condition: service_started
       postgres-data:
-        condition: service_healthy
+        condition: service_started
     networks:
       - app-network
     restart: no
@@ -76,7 +82,7 @@ services:
       - app-network
     restart: unless-stopped
 
-  # MySQL 模拟数据源
+  # MySQL 模拟数据源（挂载 volume 后 down/up 不会丢数据，仅首次执行 product_db.sql）
   mysql-data:
     image: mysql:8.0
     container_name: data-agent-mysql-datasource
@@ -86,15 +92,17 @@ services:
     networks:
       - app-network
     volumes:
+      - data-agent-mysql-datasource-data:/var/lib/mysql
       - ./config/mysql:/docker-entrypoint-initdb.d
     command: --default-authentication-plugin=mysql_native_password
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD" ]
       interval: 30s
-      timeout: 10s
+      timeout: 30s
       retries: 3
+      start_period: 120s
 
-  # PostgreSQL 模拟数据源
+  # PostgreSQL 模拟数据源（挂载 volume 后 down/up 不会丢数据）
   postgres-data:
     image: postgres:15
     container_name: data-agent-postgres-datasource
@@ -105,15 +113,19 @@ services:
     networks:
       - app-network
     volumes:
+      - data-agent-postgres-datasource-data:/var/lib/postgresql/data
       - ./config/postgres:/docker-entrypoint-initdb.d
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 30s
+      interval: 15s
       timeout: 10s
-      retries: 3
+      retries: 20
+      start_period: 60s
 
 volumes:
   data-agent-mysql-inner-data:
+  data-agent-mysql-datasource-data:
+  data-agent-postgres-datasource-data:
 
 networks:
   app-network:

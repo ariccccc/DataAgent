@@ -19,7 +19,7 @@ CREATE DATABASE china_population_db;
 \c china_population_db;
 
 -- 创建人口总数统计表
-CREATE TABLE population_total (
+CREATE TABLE IF NOT EXISTS population_total (
                                   id SERIAL PRIMARY KEY,
                                   year INTEGER NOT NULL,
                                   total_population BIGINT NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE population_total (
 );
 
 -- 创建性别比例统计表
-CREATE TABLE gender_ratio (
+CREATE TABLE IF NOT EXISTS gender_ratio (
                               id SERIAL PRIMARY KEY,
                               year INTEGER NOT NULL,
                               male_population BIGINT NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE gender_ratio (
 );
 
 -- 创建年龄结构统计表
-CREATE TABLE age_structure (
+CREATE TABLE IF NOT EXISTS age_structure (
                                id SERIAL PRIMARY KEY,
                                year INTEGER NOT NULL,
                                age_group VARCHAR(20) NOT NULL, -- 年龄组：0-14, 15-64, 65+, etc.
@@ -58,7 +58,7 @@ CREATE TABLE age_structure (
 );
 
 -- 创建城乡分布统计表
-CREATE TABLE urban_rural_distribution (
+CREATE TABLE IF NOT EXISTS urban_rural_distribution (
                                           id SERIAL PRIMARY KEY,
                                           year INTEGER NOT NULL,
                                           urban_population BIGINT NOT NULL,
@@ -71,7 +71,7 @@ CREATE TABLE urban_rural_distribution (
 );
 
 -- 创建省份人口统计表
-CREATE TABLE province_population (
+CREATE TABLE IF NOT EXISTS province_population (
                                      id SERIAL PRIMARY KEY,
                                      year INTEGER NOT NULL,
                                      province_name VARCHAR(50) NOT NULL,
@@ -85,13 +85,13 @@ CREATE TABLE province_population (
 );
 
 -- 创建索引以提高查询性能
-CREATE INDEX idx_population_total_year ON population_total(year);
-CREATE INDEX idx_gender_ratio_year ON gender_ratio(year);
-CREATE INDEX idx_age_structure_year ON age_structure(year);
-CREATE INDEX idx_age_structure_group ON age_structure(age_group);
-CREATE INDEX idx_urban_rural_year ON urban_rural_distribution(year);
-CREATE INDEX idx_province_year ON province_population(year);
-CREATE INDEX idx_province_code ON province_population(province_code);
+CREATE INDEX IF NOT EXISTS idx_population_total_year ON population_total(year);
+CREATE INDEX IF NOT EXISTS idx_gender_ratio_year ON gender_ratio(year);
+CREATE INDEX IF NOT EXISTS idx_age_structure_year ON age_structure(year);
+CREATE INDEX IF NOT EXISTS idx_age_structure_group ON age_structure(age_group);
+CREATE INDEX IF NOT EXISTS idx_urban_rural_year ON urban_rural_distribution(year);
+CREATE INDEX IF NOT EXISTS idx_province_year ON province_population(year);
+CREATE INDEX IF NOT EXISTS idx_province_code ON province_population(province_code);
 
 -- 创建更新时间触发器函数
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -103,28 +103,28 @@ END;
 $$ language 'plpgsql';
 
 -- 为所有表创建触发器
-CREATE TRIGGER update_population_total_updated_at
+CREATE TRIGGER IF NOT EXISTS update_population_total_updated_at
     BEFORE UPDATE ON population_total
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_gender_ratio_updated_at
+CREATE TRIGGER IF NOT EXISTS update_gender_ratio_updated_at
     BEFORE UPDATE ON gender_ratio
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_age_structure_updated_at
+CREATE TRIGGER IF NOT EXISTS update_age_structure_updated_at
     BEFORE UPDATE ON age_structure
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_urban_rural_distribution_updated_at
+CREATE TRIGGER IF NOT EXISTS update_urban_rural_distribution_updated_at
     BEFORE UPDATE ON urban_rural_distribution
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_province_population_updated_at
+CREATE TRIGGER IF NOT EXISTS update_province_population_updated_at
     BEFORE UPDATE ON province_population
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- 插入初始数据 - 人口总数（2010-2022年真实数据）
-INSERT INTO population_total (year, total_population, natural_growth_rate, birth_rate, death_rate) VALUES
+INSERT IGNORE INTO population_total (year, total_population, natural_growth_rate, birth_rate, death_rate) VALUES
                                                                                                        (2010, 1340910000, 4.79, 11.90, 7.11),
                                                                                                        (2011, 1347350000, 4.79, 11.93, 7.14),
                                                                                                        (2012, 1354040000, 4.95, 12.10, 7.15),
@@ -140,14 +140,14 @@ INSERT INTO population_total (year, total_population, natural_growth_rate, birth
                                                                                                        (2022, 1411750000, -0.60, 6.77, 7.37);
 
 -- 插入初始数据 - 性别比例（部分年份真实数据）
-INSERT INTO gender_ratio (year, male_population, female_population, sex_ratio, male_percentage, female_percentage) VALUES
+INSERT IGNORE INTO gender_ratio (year, male_population, female_population, sex_ratio, male_percentage, female_percentage) VALUES
                                                                                                                        (2010, 686850000, 654060000, 105.02, 51.24, 48.76),
                                                                                                                        (2015, 705410000, 669210000, 105.41, 51.27, 48.73),
                                                                                                                        (2020, 723340000, 688780000, 105.02, 51.22, 48.78),
                                                                                                                        (2022, 723520000, 688230000, 105.13, 51.25, 48.75);
 
 -- 插入初始数据 - 年龄结构（2020年第七次人口普查数据）
-INSERT INTO age_structure (year, age_group, population, percentage) VALUES
+INSERT IGNORE INTO age_structure (year, age_group, population, percentage) VALUES
                                                                         (2020, '0-14', 253380000, 17.95),
                                                                         (2020, '15-64', 968710000, 68.58),
                                                                         (2020, '65+', 189510000, 13.47),
@@ -155,14 +155,14 @@ INSERT INTO age_structure (year, age_group, population, percentage) VALUES
                                                                         (2020, '60+', 264020000, 18.70);
 
 -- 插入初始数据 - 城乡分布
-INSERT INTO urban_rural_distribution (year, urban_population, rural_population, urban_percentage, rural_percentage) VALUES
+INSERT IGNORE INTO urban_rural_distribution (year, urban_population, rural_population, urban_percentage, rural_percentage) VALUES
                                                                                                                         (2010, 665570000, 675340000, 49.65, 50.35),
                                                                                                                         (2015, 771160000, 603460000, 56.05, 43.95),
                                                                                                                         (2020, 914250000, 508490000, 64.71, 35.29),
                                                                                                                         (2022, 920710000, 491040000, 65.22, 34.78);
 
 -- 插入初始数据 - 省份人口（2020年数据）
-INSERT INTO province_population (year, province_name, province_code, total_population) VALUES
+INSERT IGNORE INTO province_population (year, province_name, province_code, total_population) VALUES
                                                                                            (2020, '广东省', 'GD', 126010000),
                                                                                            (2020, '山东省', 'SD', 101530000),
                                                                                            (2020, '河南省', 'HA', 99370000),
@@ -178,7 +178,7 @@ INSERT INTO province_population (year, province_name, province_code, total_popul
                                                                                            (2020, '重庆市', 'CQ', 32050000);
 
 -- 创建视图：综合人口统计视图
-CREATE VIEW population_overview AS
+CREATE VIEW IF NOT EXISTS population_overview AS
 SELECT
     pt.year,
     pt.total_population,
@@ -192,7 +192,7 @@ FROM population_total pt
 ORDER BY pt.year;
 
 -- 创建视图：人口结构分析视图
-CREATE VIEW population_structure_analysis AS
+CREATE VIEW IF NOT EXISTS population_structure_analysis AS
 SELECT
         year,
         SUM(CASE WHEN age_group = '0-14' THEN percentage ELSE 0 END) as child_ratio,
@@ -253,12 +253,12 @@ CREATE OR REPLACE PROCEDURE batch_insert_population_data(
 AS $$
 BEGIN
     -- 插入总人口数据
-INSERT INTO population_total (year, total_population)
+INSERT IGNORE INTO population_total (year, total_population)
 VALUES (data_year, total_pop)
     ON CONFLICT (year) DO UPDATE SET total_population = EXCLUDED.total_population;
 
 -- 插入性别数据
-INSERT INTO gender_ratio (year, male_population, female_population, sex_ratio, male_percentage, female_percentage)
+INSERT IGNORE INTO gender_ratio (year, male_population, female_population, sex_ratio, male_percentage, female_percentage)
 VALUES (
            data_year,
            male_pop,
@@ -275,7 +275,7 @@ VALUES (
                               female_percentage = EXCLUDED.female_percentage;
 
 -- 插入城乡分布数据
-INSERT INTO urban_rural_distribution (year, urban_population, rural_population, urban_percentage, rural_percentage)
+INSERT IGNORE INTO urban_rural_distribution (year, urban_population, rural_population, urban_percentage, rural_percentage)
 VALUES (
            data_year,
            urban_pop,

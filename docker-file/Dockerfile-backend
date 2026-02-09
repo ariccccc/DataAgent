@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 #Copyright 2024-2026 the original author or authors.
 #
 #Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,43 +13,48 @@
 #See the License for the specific language governing permissions and
 #limitations under the License.
 
-FROM eclipse-temurin:17-jdk-jammy as build
+# 使用官方 Maven 镜像，避免构建阶段 apt 源不可用（如 503）
+FROM maven:3.9-eclipse-temurin-17 AS build
 
 WORKDIR /app
 
-# 安装所需的软件
-RUN apt update && apt install -y maven git
+# 仅创建 Maven 阿里云镜像配置（无需 apt，避免 Ubuntu 源故障）
+RUN echo '<settings>\
+ <mirrors>\
+   <mirror>\
+     <id>aliyun</id>\
+     <url>https://maven.aliyun.com/repository/public</url>\
+     <mirrorOf>*</mirrorOf>\
+   </mirror>\
+ </mirrors>\
+ <profiles>\
+   <profile>\
+     <id>default</id>\
+     <activation>\
+       <activeByDefault>true</activeByDefault>\
+     </activation>\
+     <properties>\
+       <maven.compiler.source>17</maven.compiler.source>\
+       <maven.compiler.target>17</maven.compiler.target>\
+     </properties>\
+   </profile>\
+ </profiles>\
+</settings>' > /app/aliyun-settings.xml
 
-# (可选)配置Maven国内镜像源，加速构建
-# RUN echo '<settings>\
-#  <mirrors>\
-#    <mirror>\
-#      <id>aliyun</id>\
-#      <url>https://maven.aliyun.com/repository/public</url>\
-#      <mirrorOf>*</mirrorOf>\
-#    </mirror>\
-#  </mirrors>\
-#  <profiles>\
-#    <profile>\
-#      <id>default</id>\
-#      <activation>\
-#        <activeByDefault>true</activeByDefault>\
-#      </activation>\
-#      <properties>\
-#        <maven.compiler.source>17</maven.compiler.source>\
-#        <maven.compiler.target>17</maven.compiler.target>\
-#      </properties>\
-#    </profile>\
-#  </profiles>\
-#</settings>' > aliyun-settings.xml
-
-# 复制本地代码到构建容器
-COPY . /app/DataAgent
-
-# 进入项目目录并构建
+# 先只复制 POM，利用层缓存：依赖未变时跳过下载
+COPY pom.xml DataAgent/
+COPY data-agent-management/pom.xml DataAgent/data-agent-management/
 WORKDIR /app/DataAgent
-RUN mvn install -DskipTests
-#    mvn install -DskipTests -s ../aliyun-settings.xml
+# 仅下载依赖（POM 未变时此层被缓存，大幅加速重复构建）
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn dependency:resolve dependency:resolve-plugins -B -s /app/aliyun-settings.xml
+
+# 再复制源码并编译（代码变更时只重跑这一层及之后）
+# 跳过 checkstyle/spotless：镜像内无 .git，spotless 的 ratchetFrom 会报错
+COPY . /app/DataAgent
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn install -DskipTests -B -s /app/aliyun-settings.xml \
+    -Dcheckstyle.skip=true -Dspotless.skip=true
 
 FROM eclipse-temurin:17-jdk-jammy
 
@@ -56,12 +62,14 @@ WORKDIR /app
 
 COPY --from=build /app/DataAgent/data-agent-management/target/spring-ai-alibaba-data-agent-management-1.0.0-SNAPSHOT.jar /app/app.jar
 
-RUN apt update && apt install -y python3
-
-# 创建配置文件目录
-RUN mkdir -p /app/config
+# 使用阿里云 Ubuntu 源，避免 archive/ports.ubuntu.com 503 或连接失败
+RUN for f in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do \
+      [ -f "$$f" ] && sed -i 's|http://archive.ubuntu.com|http://mirrors.aliyun.com|g' "$$f" && sed -i 's|http://ports.ubuntu.com|http://mirrors.aliyun.com|g' "$$f"; \
+    done; \
+    apt-get update && apt-get install -y --no-install-recommends python3 \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /app/config
 
 EXPOSE 8065
 
-# 启动命令，优先使用外部配置文件
 ENTRYPOINT ["java", "-jar", "app.jar", "--spring.config.location=classpath:application.yml,optional:file:/app/config/application.yml"]

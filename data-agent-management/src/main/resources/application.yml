@@ -32,7 +32,7 @@ spring:
           # 运行Python代码的环境（生产环境建议使用docker，不建议使用local）
           code-pool-executor: local
           # Python执行的最大重试次数
-          python-max-tries-count: 5
+          python-max-tries-count: 10
         file:
           type: local
           path-prefix: data-agent
@@ -58,6 +58,11 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+# WebClient（调用大模型等 HTTPS 接口）超时配置
+webclient.response.timeout: 6000 #整次响应超时（秒），默认 600
+# webclient.ssl.handshake-timeout-seconds: SSL 握手超时（秒），默认 60
+webclient.ssl.handshake-timeout-seconds: 6000
 
 # 日志配置
 logging:
