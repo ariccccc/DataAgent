@@ -58,16 +58,17 @@ public class DynamicModelFactory {
 		// 1. 验证参数
 		checkBasic(config);
 
-		// 2. 构建 OpenAiApi (核心通讯对象)
+		// 2. 构建 OpenAiApi (核心通讯对象)，规范化 baseUrl 与 path 拼接，避免出现 .../v1chat/completions
 		String apiKey = StringUtils.hasText(config.getApiKey()) ? config.getApiKey() : "";
+		String baseUrl = normalizeBaseUrlForPath(config.getBaseUrl(), config.getCompletionsPath());
 		OpenAiApi.Builder apiBuilder = OpenAiApi.builder()
 			.apiKey(apiKey)
-			.baseUrl(config.getBaseUrl())
+			.baseUrl(baseUrl)
 			.restClientBuilder(getProxiedRestClientBuilder(config))
 			.webClientBuilder(getProxiedWebClientBuilder(config));
 
 		if (StringUtils.hasText(config.getCompletionsPath())) {
-			apiBuilder.completionsPath(config.getCompletionsPath());
+			apiBuilder.completionsPath(config.getCompletionsPath().trim());
 		}
 		OpenAiApi openAiApi = apiBuilder.build();
 
@@ -90,20 +91,39 @@ public class DynamicModelFactory {
 		checkBasic(config);
 
 		String apiKey = StringUtils.hasText(config.getApiKey()) ? config.getApiKey() : "";
+		String baseUrl = normalizeBaseUrlForPath(config.getBaseUrl(), config.getEmbeddingsPath());
 		OpenAiApi.Builder apiBuilder = OpenAiApi.builder()
 			.apiKey(apiKey)
-			.baseUrl(config.getBaseUrl())
+			.baseUrl(baseUrl)
 			.restClientBuilder(getProxiedRestClientBuilder(config))
 			.webClientBuilder(getProxiedWebClientBuilder(config));
 
 		if (StringUtils.hasText(config.getEmbeddingsPath())) {
-			apiBuilder.embeddingsPath(config.getEmbeddingsPath());
+			apiBuilder.embeddingsPath(config.getEmbeddingsPath().trim());
 		}
 
 		OpenAiApi openAiApi = apiBuilder.build();
 		return new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED,
 				OpenAiEmbeddingOptions.builder().model(config.getModelName()).build(),
 				RetryUtils.DEFAULT_RETRY_TEMPLATE);
+	}
+
+	/**
+	 * 确保 baseUrl 与 path 拼接时中间有斜杠，避免出现 .../v1chat/completions。
+	 * 当 path 非空且不以 / 开头且 baseUrl 不以 / 结尾时，在 baseUrl 末尾补 /。
+	 */
+	private static String normalizeBaseUrlForPath(String baseUrl, String path) {
+		if (!StringUtils.hasText(baseUrl)) {
+			return baseUrl;
+		}
+		String u = baseUrl.trim();
+		if (StringUtils.hasText(path)) {
+			String p = path.trim();
+			if (!p.startsWith("/") && !u.endsWith("/")) {
+				u = u + "/";
+			}
+		}
+		return u;
 	}
 
 	private static void checkBasic(ModelConfigDTO config) {

@@ -59,10 +59,14 @@ mybatis:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 
-# WebClient（调用大模型等 HTTPS 接口）超时配置
-webclient.response.timeout: 6000 #整次响应超时（秒），默认 600
-# webclient.ssl.handshake-timeout-seconds: SSL 握手超时（秒），默认 60
-webclient.ssl.handshake-timeout-seconds: 6000
+# WebClient（调用大模型等 HTTPS 接口）超时与 SSL 配置
+webclient.response.timeout: 6000 # 整次响应超时（秒），默认 600
+webclient.ssl.handshake-timeout-seconds: 6000 # SSL 握手超时（秒）
+# 若出现 SSL handshake failure（SslUtils.handleHandshakeFailure）：
+#   1. 检查模型配置中的 base_url 是否为 https 且地址正确（如通义千问：https://dashscope.aliyuncs.com/compatible-mode/v1）
+#   2. 若走企业代理/抓包：在模型配置中启用代理并填写代理地址，或将企业 CA 加入 JVM 信任库
+#   3. 仅用于临时调试（内网/代理证书不受信）：可设为 true 以跳过证书校验，生产环境勿用
+# webclient.ssl.insecure-trust-all: false
 
 # 日志配置
 logging:

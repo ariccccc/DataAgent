@@ -69,6 +69,7 @@ import reactor.netty.http.client.HttpClient;
 import reactor.netty.tcp.DefaultSslContextSpec;
 import reactor.netty.tcp.SslProvider;
 
+import javax.net.ssl.SSLException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
@@ -110,12 +111,26 @@ public class DataAgentConfiguration implements DisposableBean {
 	@Bean
 	@ConditionalOnMissingBean(WebClient.Builder.class)
 	public WebClient.Builder webClientBuilder(@Value("${webclient.response.timeout:600}") long responseTimeout,
-			@Value("${webclient.ssl.handshake-timeout-seconds:60}") long sslHandshakeTimeoutSeconds) {
-
+			@Value("${webclient.ssl.handshake-timeout-seconds:60}") long sslHandshakeTimeoutSeconds,
+			@Value("${webclient.ssl.insecure-trust-all:false}") boolean insecureTrustAll) {
 		HttpClient httpClient = HttpClient.create()
 			.responseTimeout(Duration.ofSeconds(responseTimeout))
 			.secure(spec -> {
-				SslProvider.Builder builder = spec.sslContext(DefaultSslContextSpec.forClient());
+				SslProvider.Builder builder;
+				if (insecureTrustAll) {
+					log.warn("【SSL】webclient.ssl.insecure-trust-all=true，已关闭证书校验，仅建议在代理/内网调试时临时使用");
+					try {
+						builder = spec.sslContext(io.netty.handler.ssl.SslContextBuilder.forClient()
+							.trustManager(io.netty.handler.ssl.util.InsecureTrustManagerFactory.INSTANCE)
+							.build());
+					}
+					catch (SSLException e) {
+						throw new IllegalStateException("Failed to build insecure SSL context", e);
+					}
+				}
+				else {
+					builder = spec.sslContext(DefaultSslContextSpec.forClient());
+				}
 				builder.handshakeTimeout(Duration.ofSeconds(sslHandshakeTimeoutSeconds));
 			});
 

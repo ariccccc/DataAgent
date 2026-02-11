@@ -15,6 +15,10 @@
 # 构建加速：请使用 BuildKit 以启用 Maven/npm 缓存（首次构建后依赖层会被缓存）
 #   export DOCKER_BUILDKIT=1
 #   docker compose -f docker-file/docker-compose.yml build
+#
+# 仅重建并启动后端/前端（保留 MySQL/Postgres 数据，model_config 等不会丢）：
+#   docker compose -f docker-file/docker-compose.yml up -d --build backend frontend
+# 注意：不要使用 docker compose down -v，-v 会删除数据卷，导致库表数据被清空。
 
 services:
   # MySQL数据库（业务库，挂载 volume 后 down/up 不会丢数据）
