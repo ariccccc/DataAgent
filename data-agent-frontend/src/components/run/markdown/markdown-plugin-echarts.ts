@@ -31,10 +31,17 @@ export default (md: MarkdownIt) => {
           const width = '100%';
           const height = 400;
           return `<div style="width:${width};height:${height}px" class="md-echarts">${JSON.stringify(json)}</div>`;
-        } catch (e) {
-          // JSON.parse exception
-          // 如果解析失败，但结构看起来完整，可能是JSON格式问题，尝试提供更友好的错误信息
-          return `<pre>echarts配置格式错误: ${(e as Error).message}</pre>`;
+        } catch {
+          // JSON.parse 失败：可能是 LLM/Python 生成了包含 function 的 JS 对象字面量（如 formatter: function(param){...}）
+          // JSON 不支持函数，尝试用 new Function 解析，与 ReportTemplateUtil / report-html-template 保持一致
+          try {
+            new Function('return (' + code + ')')(); // 校验可解析，实际渲染由 MarkdownAgentContainer 负责
+            const width = '100%';
+            const height = 400;
+            return `<div style="width:${width};height:${height}px" class="md-echarts" data-echarts-raw="${encodeURIComponent(code)}"></div>`;
+          } catch (e) {
+            return `<pre>echarts配置格式错误: ${(e as Error).message}</pre>`;
+          }
         }
       } else {
         // 如果JSON结构不完整，返回原始代码块，不进行渲染

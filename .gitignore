@@ -1,5 +1,8 @@
 target/
 
+# 部署发布包（scripts/build-deploy-package.sh 生成）
+DataAgent-deploy-*.zip
+
 ### IntelliJ IDEA ###
 .idea/*
 **/.idea/*

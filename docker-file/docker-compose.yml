@@ -16,6 +16,10 @@
 #   export DOCKER_BUILDKIT=1
 #   docker compose -f docker-file/docker-compose.yml build
 #
+# Docker Hub 基础镜像（maven、eclipse-temurin、node、nginx、mysql）拉取加速：
+#   在 /etc/docker/daemon.json 添加 "registry-mirrors": ["https://registry.cn-hangzhou.aliyuncs.com"]
+#   或登录阿里云容器镜像服务控制台获取个人专属加速地址，然后 systemctl restart docker
+#
 # 仅重建并启动后端/前端（保留 MySQL/Postgres 数据，model_config 等不会丢）：
 #   docker compose -f docker-file/docker-compose.yml up -d --build backend frontend
 # 注意：不要使用 docker compose down -v，-v 会删除数据卷，导致库表数据被清空。
@@ -61,9 +65,9 @@ services:
         condition: service_healthy
       # 模拟数据源仅需容器已启动即可，init 脚本在后台跑完会自行变 healthy，避免 compose up 等太久
       mysql-data:
-        condition: service_started
+        condition: service_healthy
       postgres-data:
-        condition: service_started
+        condition: service_healthy
     networks:
       - app-network
     restart: no
@@ -107,6 +111,7 @@ services:
       start_period: 120s
 
   # PostgreSQL 模拟数据源（挂载 volume 后 down/up 不会丢数据）
+  # 使用 postgres:15 匹配既有数据目录；官方镜像多架构（arm64/amd64）
   postgres-data:
     image: postgres:15
     container_name: data-agent-postgres-datasource

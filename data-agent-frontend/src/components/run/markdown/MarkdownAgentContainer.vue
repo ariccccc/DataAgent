@@ -113,38 +113,41 @@
         const echartsElements = document.querySelectorAll('.md-echarts');
         echartsElements.forEach(element => {
           try {
-            const content = element.textContent;
-            if (!content || content.trim() === '') {
-              return;
-            }
-            // 再次验证JSON结构是否完整
-            const hasValidJson =
-              /\{[\s\S]*\}/.test(content) &&
-              content.match(/\{/g)?.length === content.match(/\}/g)?.length;
-            if (hasValidJson) {
-              const options = JSON.parse(content);
-              if (!options.color) {
-                options.color = EXTENDED_COLORS;
-              }
-              const existingChart = echarts.getInstanceByDom(element);
-              if (existingChart) {
-                // 复用已存在的图表实例，避免重复初始化导致的内存泄漏
-                existingChart.setOption(options, true);
-              } else {
-                const chart = echarts.init(element);
-                chart.setOption(options);
-              }
+            // 优先检查 data-echarts-raw：LLM/Python 可能生成含 function 的 JS 对象字面量
+            const rawAttr = element.getAttribute('data-echarts-raw');
+            let options: Record<string, unknown>;
+            if (rawAttr) {
+              const code = decodeURIComponent(rawAttr);
+              options = new Function('return (' + code + ')')();
             } else {
-              // 如果JSON不完整，不做任何处理，保持原始状态
-              console.log(
-                'ECharts configuration is incomplete, skipping rendering',
-                element.textContent,
-              );
+              const content = element.textContent;
+              if (!content || content.trim() === '') {
+                return;
+              }
+              const hasValidJson =
+                /\{[\s\S]*\}/.test(content) &&
+                content.match(/\{/g)?.length === content.match(/\}/g)?.length;
+              if (!hasValidJson) {
+                console.log(
+                  'ECharts configuration is incomplete, skipping rendering',
+                  element.textContent,
+                );
+                return;
+              }
+              options = JSON.parse(content);
+            }
+            if (!options.color) {
+              options.color = EXTENDED_COLORS;
+            }
+            const existingChart = echarts.getInstanceByDom(element);
+            if (existingChart) {
+              existingChart.setOption(options, true);
+            } else {
+              const chart = echarts.init(element);
+              chart.setOption(options);
             }
           } catch (e) {
-            // 只在控制台记录错误，不影响用户界面
             console.error('ECharts rendering error:', e);
-            // 不替换元素，保持原始内容，等待完整数据
           }
         });
       }, 500); // 500毫秒内不重复检查

@@ -86,6 +86,21 @@ npm install && npm run dev
 ### 3. 访问系统
 打开浏览器访问 `http://localhost:3000`，开始创建您的第一个数据智能体！
 
+### 4. 打部署包并在其他环境用 Docker 部署
+若需将工程打包后到其他机器仅用 Docker Compose 部署，可先打“仅含部署所需文件”的 zip 包（已排除 target、node_modules、文档等），再在目标环境解压并执行 compose：
+
+```bash
+# 在工程根目录执行，生成 DataAgent-deploy-<版本>.zip
+./scripts/build-deploy-package.sh
+
+# 在目标环境解压后，在解压后的根目录执行
+export DOCKER_BUILDKIT=1
+docker compose -f docker-file/docker-compose.yml build
+docker compose -f docker-file/docker-compose.yml up -d
+```
+
+解压后的 `docker-file/DEPLOY.md` 中有完整部署说明。
+
 ## 📚 文档导航
 
 | 文档 | 此文档包含的内容 |
