@@ -106,6 +106,7 @@ docker compose -f docker-file/docker-compose.yml up -d
 | 文档 | 此文档包含的内容 |
 | :--- | :--- |
 | [快速开始](docs/QUICK_START.md) | 环境要求、数据库导入、基础配置、系统初体验 |
+| [阿里云云效部署](docs/DEPLOYMENT_ALIYUN_DEVOPS.md) | 通过阿里云云效流水线部署到 ECS 的完整指南 |
 | [架构设计](docs/ARCHITECTURE.md) | 系统分层架构、StateGraph与工作流设计、核心模块时序图 |
 | [开发者指南](docs/DEVELOPER_GUIDE.md) | 开发环境搭建、详细配置手册、代码规范、扩展开发(向量库/模型) |
 | [高级功能](docs/ADVANCED_FEATURES.md) | API Key 调用、MCP 服务器配置、自定义混合检索策略、Python执行器配置 |
